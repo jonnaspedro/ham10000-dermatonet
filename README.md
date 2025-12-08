@@ -16,7 +16,7 @@ Projeto DermatoNet — um sistema de classificação automática de lesões de p
 - Artigo científico em desenvolvimento  
 
 ## Dataset
-- **HAM10000 – Large Collection of Multi-Source Dermatoscopic Images**
+- [**Skin Cancer MNIST: HAM10000 - a large collection of multi-source dermatoscopic images of pigmented lesions**](https://www.kaggle.com/datasets/kmader/skin-cancer-mnist-ham10000)
 
 ## Objetivo
 Desenvolver um modelo de deep learning capaz de classificar diferentes tipos de lesões de pele e disponibilizar essa solução em uma aplicação na nuvem.
