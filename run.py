@@ -2,16 +2,18 @@ import subprocess
 import sys
 
 if len(sys.argv) < 2:
-    print("Use: python runner.py [install|train|streamlit|start]")
+    print("Use: python run.py [install|analysis|train|interface|startall|interfaceall]")
     sys.exit(1)
 
 option = sys.argv[1]
 
 scripts = {
-    "install": ["dataset_install.py"],
-    "train": ["train_model.py"],
-    "streamlit": ["streamlit_app.py"],
-    "start": ["train_model.py", "streamlit_app.py"],
+    "install": ["src/dataset_install.py"],
+    "analysis": ["src/exploratory_analysis.py"],
+    "train": ["src/train_model.py"],
+    "interface": ["src/exploratory_analysis.py", "src/train_model.py", "src/inference.py"],
+    "startall": ["src/exploratory_analysis.py", "src/train_model.py"],
+    "interfaceall": ["src/exploratory_analysis.py", "src/train_model.py", "src/inference.py"],
 }
 
 for s in scripts[option]:

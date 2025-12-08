@@ -1,5 +1,11 @@
 # Para o programa funcionar corretamente, certifique-se de colocar os arquivos
-# baixados pelo Kagglehub na pasta './dataset'
+# baixados pelo Kagglehub na pasta 'dataset' na raiz do repositório.
+"""
+ham10000-dermatonet/
+    dataset/
+    generated/
+    src/
+"""
 
 import kagglehub
 

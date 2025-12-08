@@ -1,0 +1,9 @@
+dermatonet_best.pth (generated)
+model_metadata.pkl (generated)
+dermatonet_logs.db (generated)
+confusion_matrix.png (generated)
+training_history.png (generated)
+
+# Optional (with 'exploratory_analysis.py')
+class_examples.png (generated)
+eda_visualizations.png (generated)
