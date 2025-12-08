@@ -32,11 +32,14 @@ Desenvolver um modelo de deep learning capaz de classificar diferentes tipos de 
 # Instale as dependências
 pip install -r requirements.txt
 
+# Ir para o diretório 'src'
+cd src
+
 # Para instalar o dataset
-python run.py install
+python dataset_install.py
 
 # Para treinar
-python run.py train
+python train_model.py
 
 # Para iniciar o streamlit (CLI)
 streamlit streamlit_app.py
