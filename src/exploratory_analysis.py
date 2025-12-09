@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from PIL import Image
 
-# Configurar estilo dos gráficos
 plt.style.use('seaborn-v0_8-darkgrid')
 sns.set_palette("husl")
 
@@ -14,7 +13,6 @@ print("="*70)
 
 path = "dataset"
 
-# 2. Carregar metadados
 metadata_path = os.path.join(path, "HAM10000_metadata.csv")
 df = pd.read_csv(metadata_path)
 
@@ -26,7 +24,6 @@ print("\nColunas disponíveis:")
 for col in df.columns:
     print(f"  - {col}")
 
-# 3. Verificar valores ausentes
 print("\nVALORES AUSENTES")
 print(f"{'='*70}")
 missing = df.isnull().sum()
@@ -34,7 +31,6 @@ print(missing[missing > 0])
 if missing.sum() == 0:
     print("✅ Nenhum valor ausente encontrado!")
 
-# 4. Distribuição das classes
 print("\nDISTRIBUIÇÃO DAS CLASSES")
 print(f"{'='*70}")
 
@@ -53,13 +49,10 @@ for cls, count in class_counts.items():
     percentage = (count / len(df)) * 100
     print(f"{class_names[cls]:30s} ({cls}): {count:5d} ({percentage:5.2f}%)")
 
-# 5. Visualizações
 print("\nGERANDO VISUALIZAÇÕES...")
 
-# Criar figura com múltiplos subplots
 fig = plt.figure(figsize=(18, 12))
 
-# 5.1 Distribuição de classes
 ax1 = plt.subplot(2, 3, 1)
 class_counts.plot(kind='bar', ax=ax1, color='skyblue', edgecolor='black')
 ax1.set_title('Distribuição das Classes', fontsize=14, fontweight='bold')
@@ -69,7 +62,6 @@ ax1.tick_params(axis='x', rotation=45)
 for i, v in enumerate(class_counts):
     ax1.text(i, v + 100, str(v), ha='center', va='bottom', fontsize=10)
 
-# 5.2 Distribuição por gênero
 ax2 = plt.subplot(2, 3, 2)
 gender_counts = df['sex'].value_counts()
 colors = ['#FF6B6B', '#4ECDC4', '#95E1D3']
@@ -77,7 +69,6 @@ ax2.pie(gender_counts, labels=gender_counts.index, autopct='%1.1f%%',
         startangle=90, colors=colors, explode=(0.05, 0.05, 0))
 ax2.set_title('Distribuição por Gênero', fontsize=14, fontweight='bold')
 
-# 5.3 Distribuição de idade
 ax3 = plt.subplot(2, 3, 3)
 df['age'].hist(bins=30, ax=ax3, color='coral', edgecolor='black', alpha=0.7)
 ax3.set_title('Distribuição de Idade', fontsize=14, fontweight='bold')
@@ -86,7 +77,6 @@ ax3.set_ylabel('Frequência', fontsize=12)
 ax3.axvline(df['age'].mean(), color='red', linestyle='--', linewidth=2, label=f'Média: {df["age"].mean():.1f}')
 ax3.legend()
 
-# 5.4 Classes por localização
 ax4 = plt.subplot(2, 3, 4)
 localization_counts = df['localization'].value_counts().head(10)
 localization_counts.plot(kind='barh', ax=ax4, color='lightgreen', edgecolor='black')
@@ -94,7 +84,6 @@ ax4.set_title('Top 10 Localizações', fontsize=14, fontweight='bold')
 ax4.set_xlabel('Quantidade', fontsize=12)
 ax4.set_ylabel('Localização', fontsize=12)
 
-# 5.5 Distribuição de classes por gênero
 ax5 = plt.subplot(2, 3, 5)
 gender_class = pd.crosstab(df['dx'], df['sex'])
 gender_class.plot(kind='bar', ax=ax5, stacked=False)
@@ -104,7 +93,6 @@ ax5.set_ylabel('Quantidade', fontsize=12)
 ax5.tick_params(axis='x', rotation=45)
 ax5.legend(title='Gênero')
 
-# 5.6 Heatmap de correlação entre classe e localização
 ax6 = plt.subplot(2, 3, 6)
 class_loc = pd.crosstab(df['dx'], df['localization'])
 sns.heatmap(class_loc, annot=False, cmap='YlOrRd', ax=ax6, cbar_kws={'label': 'Contagem'})
@@ -117,12 +105,10 @@ plt.tight_layout()
 plt.savefig('generated/eda_visualizations.png', dpi=300, bbox_inches='tight')
 print("✅ Visualizações salvas em: generated/eda_visualizations.png")
 
-# 6. Estatísticas descritivas
 print("\nESTATÍSTICAS DESCRITIVAS")
 print(f"{'='*70}")
 print(df.describe())
 
-# 7. Informações adicionais
 print("\nINFORMAÇÕES ADICIONAIS")
 print(f"{'='*70}")
 print(f"Idade média: {df['age'].mean():.2f} anos")
@@ -133,7 +119,6 @@ print(f"Desvio padrão da idade: {df['age'].std():.2f} anos")
 print(f"\nLocalizações únicas: {df['localization'].nunique()}")
 print(f"Tipos de diagnóstico: {df['dx_type'].nunique()}")
 
-# 8. Verificar imagens
 print("\nVERIFICANDO IMAGENS")
 print(f"{'='*70}")
 
@@ -147,7 +132,6 @@ print(f"Imagens em part_1: {images_part1}")
 print(f"Imagens em part_2: {images_part2}")
 print(f"Total de imagens: {images_part1 + images_part2}")
 
-# 9. Mostrar exemplos de imagens de cada classe
 print("\nGERANDO EXEMPLOS DE IMAGENS POR CLASSE")
 print(f"{'='*70}")
 
@@ -155,15 +139,13 @@ fig, axes = plt.subplots(2, 4, figsize=(16, 8))
 axes = axes.flatten()
 
 for idx, (cls, cls_name) in enumerate(class_names.items()):
-    if idx >= 7:  # Apenas 7 classes
+    if idx >= 7:
         axes[idx].axis('off')
         continue
     
-    # Pegar primeira imagem da classe
     sample = df[df['dx'] == cls].iloc[0]
     img_id = sample['image_id']
     
-    # Encontrar imagem
     img_path1 = os.path.join(img_dir1, f"{img_id}.jpg")
     img_path2 = os.path.join(img_dir2, f"{img_id}.jpg")
     
@@ -175,14 +157,12 @@ for idx, (cls, cls_name) in enumerate(class_names.items()):
         axes[idx].set_title(f"{cls_name}\n({cls})", fontsize=10, fontweight='bold')
         axes[idx].axis('off')
 
-# Remover subplot extra
 axes[7].axis('off')
 
 plt.tight_layout()
 plt.savefig('generated/class_examples.png', dpi=300, bbox_inches='tight')
 print("✅ Exemplos de imagens salvos em: generated/class_examples.png")
 
-# 10. Análise de desbalanceamento
 print("\nANÁLISE DE DESBALANCEAMENTO")
 print(f"{'='*70}")
 
@@ -203,7 +183,6 @@ if imbalance_ratio > 10:
 else:
     print("✅ Desbalanceamento moderado - pesos de classe devem ajudar")
 
-# 11. Resumo final
 print(f"\n{'='*70}")
 print("📋 RESUMO DA ANÁLISE EXPLORATÓRIA")
 print(f"{'='*70}")

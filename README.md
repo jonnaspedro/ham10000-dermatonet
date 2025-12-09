@@ -39,5 +39,5 @@ python run.py install
 python run.py train
 
 # Para iniciar o streamlit (CLI)
-streamlit streamlit_app.py
+streamlit run ./src/streamlit_app.py
 ```

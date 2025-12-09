@@ -7,7 +7,6 @@ import pandas as pd
 import sqlite3
 import joblib
 
-# Configuração da página
 st.set_page_config(
     page_title="DermatoNet - Classificação de Lesões de Pele",
     page_icon="🔬",
@@ -15,7 +14,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# CSS customizado
 st.markdown("""
 <style>
     .main-header {
@@ -40,7 +38,7 @@ st.markdown("""
         text-align: center;
     }
     .warning-box {
-        background-color: #fff3cd;
+        background-color: #d8a80f;
         border-left: 5px solid #ffc107;
         padding: 1rem;
         margin: 1rem 0;
@@ -56,11 +54,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Constantes
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 IMG_SIZE = 224
 
-# Descrições das classes
 CLASS_DESCRIPTIONS = {
     'akiec': {
         'name': 'Ceratose Actínica',
@@ -106,10 +102,9 @@ CLASS_DESCRIPTIONS = {
     }
 }
 
-# Inicialização do banco de dados
 def init_database():
     """Cria banco de dados SQLite para registro de interações"""
-    conn = sqlite3.connect('../generated/dermatonet_logs.db')
+    conn = sqlite3.connect('generated/dermatonet_logs.db')
     cursor = conn.cursor()
     
     cursor.execute('''
@@ -146,16 +141,13 @@ def get_statistics():
     conn.close()
     return df
 
-# Carregar modelo
 @st.cache_resource
 def load_model():
     """Carrega modelo treinado"""
     try:
-        # Carregar metadados
-        metadata = joblib.load('../generated/model_metadata.pkl')
+        metadata = joblib.load('generated/model_metadata.pkl')
         class_names = metadata['class_names']
         
-        # Criar arquitetura do modelo
         model = models.resnet50(pretrained=False)
         num_features = model.fc.in_features
         model.fc = nn.Sequential(
@@ -166,8 +158,7 @@ def load_model():
             nn.Linear(512, len(class_names))
         )
         
-        # Carregar pesos
-        model.load_state_dict(torch.load('../generated/dermatonet_best.pth', map_location=DEVICE))
+        model.load_state_dict(torch.load('generated/dermatonet_best.pth', map_location=DEVICE))
         model = model.to(DEVICE)
         model.eval()
         
@@ -176,7 +167,6 @@ def load_model():
         st.error(f"❌ Erro ao carregar modelo: {e}")
         return None, None, None
 
-# Transformações de imagem
 transform = transforms.Compose([
     transforms.Resize((IMG_SIZE, IMG_SIZE)),
     transforms.ToTensor(),
@@ -185,10 +175,8 @@ transform = transforms.Compose([
 
 def predict_image(image, model, class_names):
     """Realiza predição em uma imagem"""
-    # Pré-processar
     image_tensor = transform(image).unsqueeze(0).to(DEVICE)
     
-    # Predição
     with torch.no_grad():
         outputs = model(image_tensor)
         probabilities = torch.nn.functional.softmax(outputs, dim=1)
@@ -197,22 +185,17 @@ def predict_image(image, model, class_names):
     predicted_class = class_names[predicted.item()]
     confidence_value = confidence.item() * 100
     
-    # Todas as probabilidades
     all_probs = probabilities[0].cpu().numpy()
     prob_dict = {class_names[i]: float(all_probs[i] * 100) for i in range(len(class_names))}
     
     return predicted_class, confidence_value, prob_dict
 
-# Interface principal
 def main():
-    # Inicializar banco de dados
     init_database()
     
-    # Header
     st.markdown('<div class="main-header">🔬 DermatoNet</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-header">Sistema Inteligente de Classificação de Lesões de Pele</div>', unsafe_allow_html=True)
     
-    # Aviso médico
     st.markdown("""
     <div class="warning-box">
         <strong>⚠️ AVISO MÉDICO IMPORTANTE:</strong><br>
@@ -221,7 +204,6 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
-    # Sidebar
     with st.sidebar:
         st.header("📋 Menu")
         page = st.radio("Navegação", ["🏠 Classificação", "📊 Estatísticas", "ℹ️ Sobre"])
@@ -229,7 +211,6 @@ def main():
         st.markdown("---")
         st.markdown("### 🎯 Precisão do Modelo")
         
-        # Carregar modelo e mostrar métricas
         model, class_names, metadata = load_model()
         
         if metadata:
@@ -241,7 +222,6 @@ def main():
         st.markdown("**Modelo:** ResNet50")
         st.markdown("**Transfer Learning:** ✅")
     
-    # Página de Classificação
     if page == "🏠 Classificação":
         if model is None:
             st.error("❌ Modelo não encontrado. Execute o script de treinamento primeiro.")
@@ -261,13 +241,10 @@ def main():
                 image = Image.open(uploaded_file).convert('RGB')
                 st.image(image, caption='Imagem Carregada', use_container_width=True)
                 
-                # Botão de análise
                 if st.button("🔍 Analisar Imagem", type="primary", use_container_width=True):
                     with st.spinner("Analisando imagem..."):
-                        # Predição
                         predicted_class, confidence, prob_dict = predict_image(image, model, class_names)
                         
-                        # Salvar no session state
                         st.session_state['prediction'] = {
                             'class': predicted_class,
                             'confidence': confidence,
@@ -275,7 +252,6 @@ def main():
                             'image_name': uploaded_file.name
                         }
                         
-                        # Log no banco
                         log_prediction(predicted_class, confidence, uploaded_file.name)
         
         with col2:
@@ -285,7 +261,6 @@ def main():
                 pred = st.session_state['prediction']
                 class_info = CLASS_DESCRIPTIONS[pred['class']]
                 
-                # Box de resultado
                 st.markdown(f"""
                 <div class="prediction-box">
                     <h2>🔬 Diagnóstico Predito</h2>
@@ -294,11 +269,9 @@ def main():
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # Informações detalhadas
                 st.markdown("### 📝 Informações da Lesão")
                 st.write(f"**Descrição:** {class_info['description']}")
                 
-                # Nível de risco com cor
                 _risk_colors = {
                     'Baixo': '🟢',
                     'Médio': '🟡',
@@ -315,7 +288,6 @@ def main():
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # Probabilidades de todas as classes
                 st.markdown("### 📊 Distribuição de Probabilidades")
                 
                 prob_df = pd.DataFrame({
@@ -327,7 +299,6 @@ def main():
             else:
                 st.info("👆 Faça upload de uma imagem e clique em 'Analisar' para ver os resultados.")
     
-    # Página de Estatísticas
     elif page == "📊 Estatísticas":
         st.subheader("📊 Estatísticas de Uso do Sistema")
         
@@ -357,7 +328,6 @@ def main():
         else:
             st.info("📭 Nenhuma análise realizada ainda.")
     
-    # Página Sobre
     elif page == "ℹ️ Sobre":
         st.subheader("ℹ️ Sobre o DermatoNet")
         

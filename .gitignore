@@ -1,6 +1,2 @@
 dataset/
-
-generated/*.pth
-generated/*.pkl
-generated/*.db
-generated/*.png
+.venv

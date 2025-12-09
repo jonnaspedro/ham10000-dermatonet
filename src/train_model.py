@@ -14,22 +14,20 @@ from PIL import Image
 import joblib
 from tqdm import tqdm
 
-# Configurações
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 BATCH_SIZE = 32
 EPOCHS = 30
 IMG_SIZE = 224
 LEARNING_RATE = 0.0001
 
-# Classes do HAM10000
 CLASSES = {
-    'akiec': 0,  # Actinic keratoses
-    'bcc': 1,    # Basal cell carcinoma
-    'bkl': 2,    # Benign keratosis-like lesions
-    'df': 3,     # Dermatofibroma
-    'mel': 4,    # Melanoma
-    'nv': 5,     # Melanocytic nevi
-    'vasc': 6    # Vascular lesions
+    'akiec': 0,
+    'bcc': 1,
+    'bkl': 2,
+    'df': 3,
+    'mel': 4,
+    'nv': 5,
+    'vasc': 6
 }
 
 CLASS_NAMES = list(CLASSES.keys())
@@ -37,9 +35,8 @@ CLASS_NAMES = list(CLASSES.keys())
 print(f"Dispositivo: {DEVICE}")
 print(f"Classes: {CLASS_NAMES}")
 
-path = "../dataset"
+path = "dataset"
 
-# 2. Carregar metadados
 metadata_path = os.path.join(path, "HAM10000_metadata.csv")
 df = pd.read_csv(metadata_path)
 
@@ -47,7 +44,6 @@ print(f"\nTotal de imagens: {len(df)}")
 print("Distribuição das classes:")
 print(df['dx'].value_counts())
 
-# 3. Preparar caminhos das imagens
 img_dir1 = os.path.join(path, "HAM10000_images_part_1")
 img_dir2 = os.path.join(path, "HAM10000_images_part_2")
 
@@ -69,7 +65,6 @@ df['label'] = df['dx'].map(CLASSES)
 
 print(f"✅ Imagens encontradas: {len(df)}")
 
-# 4. Split dos dados (70% treino, 15% validação, 15% teste)
 train_df, temp_df = train_test_split(df, test_size=0.3, stratify=df['label'], random_state=42)
 val_df, test_df = train_test_split(temp_df, test_size=0.5, stratify=temp_df['label'], random_state=42)
 
@@ -78,7 +73,6 @@ print(f"   Treino: {len(train_df)}")
 print(f"   Validação: {len(val_df)}")
 print(f"   Teste: {len(test_df)}")
 
-# 5. Dataset customizado
 class HAM10000Dataset(Dataset):
     def __init__(self, dataframe, transform=None):
         self.df = dataframe.reset_index(drop=True)
@@ -97,7 +91,6 @@ class HAM10000Dataset(Dataset):
         
         return image, label
 
-# 6. Transformações (Data Augmentation para treino)
 train_transform = transforms.Compose([
     transforms.Resize((IMG_SIZE, IMG_SIZE)),
     transforms.RandomHorizontalFlip(),
@@ -114,7 +107,6 @@ val_transform = transforms.Compose([
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
-# 7. DataLoaders
 train_dataset = HAM10000Dataset(train_df, transform=train_transform)
 val_dataset = HAM10000Dataset(val_df, transform=val_transform)
 test_dataset = HAM10000Dataset(test_df, transform=val_transform)
@@ -123,16 +115,13 @@ train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, nu
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
 test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
 
-# 8. Modelo com Transfer Learning (ResNet50)
 def create_model(num_classes=7):
     """Cria modelo ResNet50 pré-treinado"""
     model = models.resnet50(pretrained=True)
     
-    # Congelar camadas iniciais
     for param in model.parameters():
         param.requires_grad = False
     
-    # Substituir última camada
     num_features = model.fc.in_features
     model.fc = nn.Sequential(
         nn.Dropout(0.5),
@@ -149,7 +138,6 @@ model = model.to(DEVICE)
 
 print("\nModelo: ResNet50 com Transfer Learning")
 
-# 9. Loss e Optimizer com pesos balanceados
 class_counts = df['dx'].value_counts()
 class_weights = 1.0 / torch.tensor([class_counts[name] for name in CLASS_NAMES], dtype=torch.float)
 class_weights = class_weights / class_weights.sum() * len(CLASSES)
@@ -159,7 +147,6 @@ criterion = nn.CrossEntropyLoss(weight=class_weights)
 optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=3, factor=0.5)
 
-# 10. Funções de treino e validação
 def train_epoch(model, loader, criterion, optimizer):
     model.train()
     running_loss = 0.0
@@ -201,7 +188,6 @@ def validate(model, loader, criterion):
     
     return running_loss / len(loader), 100. * correct / total
 
-# 11. Treinamento
 print("\nIniciando treinamento...\n")
 
 history = {
@@ -230,18 +216,16 @@ for epoch in range(EPOCHS):
     print(f"   Train Loss: {train_loss:.4f} | Train Acc: {train_acc:.2f}%")
     print(f"   Val Loss: {val_loss:.4f} | Val Acc: {val_acc:.2f}%")
     
-    # Salvar melhor modelo
     if val_acc > best_val_acc:
         best_val_acc = val_acc
-        torch.save(model.state_dict(), '../generated/dermatonet_best.pth')
+        torch.save(model.state_dict(), 'generated/dermatonet_best.pth')
         print(f"   Melhor modelo salvo! (Val Acc: {val_acc:.2f}%)")
 
-# 12. Avaliação final no conjunto de teste
 print("\n" + "="*60)
 print("AVALIAÇÃO FINAL NO CONJUNTO DE TESTE")
 print("="*60)
 
-model.load_state_dict(torch.load('../generated/dermatonet_best.pth'))
+model.load_state_dict(torch.load('generated/dermatonet_best.pth'))
 model.eval()
 
 all_preds = []
@@ -256,11 +240,9 @@ with torch.no_grad():
         all_preds.extend(predicted.cpu().numpy())
         all_labels.extend(labels.numpy())
 
-# 13. Métricas e visualizações
 print("\nRELATÓRIO DE CLASSIFICAÇÃO:")
 print(classification_report(all_labels, all_preds, target_names=CLASS_NAMES))
 
-# Matriz de confusão
 cm = confusion_matrix(all_labels, all_preds)
 plt.figure(figsize=(10, 8))
 sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
@@ -269,10 +251,9 @@ plt.title('Matriz de Confusão - DermatoNet')
 plt.ylabel('Verdadeiro')
 plt.xlabel('Predito')
 plt.tight_layout()
-plt.savefig('../generated/confusion_matrix.png', dpi=300)
+plt.savefig('generated/confusion_matrix.png', dpi=300)
 print("Matriz de confusão salva em: confusion_matrix.png")
 
-# Histórico de treinamento
 fig, axes = plt.subplots(1, 2, figsize=(15, 5))
 
 axes[0].plot(history['train_loss'], label='Train Loss')
@@ -292,10 +273,9 @@ axes[1].legend()
 axes[1].grid(True)
 
 plt.tight_layout()
-plt.savefig('../generated/training_history.png', dpi=300)
+plt.savefig('generated/training_history.png', dpi=300)
 print("Histórico de treinamento salvo em: training_history.png")
 
-# 14. Salvar metadados
 metadata = {
     'class_names': CLASS_NAMES,
     'img_size': IMG_SIZE,
@@ -303,7 +283,7 @@ metadata = {
     'test_acc': 100. * sum(np.array(all_preds) == np.array(all_labels)) / len(all_labels)
 }
 
-joblib.dump(metadata, '../generated/model_metadata.pkl')
+joblib.dump(metadata, 'generated/model_metadata.pkl')
 print("Metadados salvos em: model_metadata.pkl")
 
 print("\n" + "="*60)

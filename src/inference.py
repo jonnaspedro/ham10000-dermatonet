@@ -6,11 +6,9 @@ import joblib
 import argparse
 import sys
 
-# Configurações
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 IMG_SIZE = 224
 
-# Descrições das classes
 CLASS_INFO = {
     'akiec': {
         'name': 'Ceratose Actínica (Actinic Keratoses)',
@@ -53,7 +51,6 @@ def load_model(model_path='dermatonet_best.pth', metadata_path='model_metadata.p
     """Carrega o modelo treinado"""
     print("Carregando modelo...")
     
-    # Carregar metadados
     try:
         metadata = joblib.load(metadata_path)
         class_names = metadata['class_names']
@@ -62,7 +59,6 @@ def load_model(model_path='dermatonet_best.pth', metadata_path='model_metadata.p
         print(f"❌ Erro: Arquivo {metadata_path} não encontrado!")
         sys.exit(1)
     
-    # Criar arquitetura
     model = models.resnet50(pretrained=False)
     num_features = model.fc.in_features
     model.fc = nn.Sequential(
@@ -73,7 +69,6 @@ def load_model(model_path='dermatonet_best.pth', metadata_path='model_metadata.p
         nn.Linear(512, len(class_names))
     )
     
-    # Carregar pesos
     try:
         model.load_state_dict(torch.load(model_path, map_location=DEVICE))
         model = model.to(DEVICE)
@@ -112,7 +107,6 @@ def predict(model, image_tensor, class_names, top_k=3):
         outputs = model(image_tensor)
         probabilities = torch.nn.functional.softmax(outputs, dim=1)
         
-        # Top-K predições
         top_probs, top_indices = torch.topk(probabilities, top_k)
         
         predictions = []
@@ -132,7 +126,6 @@ def print_results(predictions, verbose=False):
     print("🔬 RESULTADO DA ANÁLISE")
     print("="*70)
     
-    # Predição principal
     pred = predictions[0]
     info = pred['info']
     
@@ -142,7 +135,6 @@ def print_results(predictions, verbose=False):
     print(f"   Nível de Risco: {info['risk']}")
     print(f"   Descrição: {info['description']}")
     
-    # Recomendação
     print("\nRECOMENDAÇÃO")
     if info['risk'] in ['MUITO ALTO', 'ALTO']:
         print("   URGENTE: Procure um dermatologista IMEDIATAMENTE!")
@@ -151,14 +143,12 @@ def print_results(predictions, verbose=False):
     else:
         print("   Acompanhamento de rotina recomendado.")
     
-    # Outras possibilidades (verbose)
     if verbose and len(predictions) > 1:
         print(f"\n📊 OUTRAS POSSIBILIDADES (Top-{len(predictions)})")
         for i, pred in enumerate(predictions[1:], 2):
             info = pred['info']
             print(f"   {i}. {info['name']}: {pred['confidence']:.2f}%")
     
-    # Aviso médico
     print("\nAVISO IMPORTANTE")
     print("   Este resultado é gerado por IA e NÃO substitui diagnóstico médico.")
     print("   Sempre consulte um profissional de saúde qualificado.")
@@ -190,32 +180,26 @@ Exemplos de uso:
     
     args = parser.parse_args()
     
-    # Banner
     print("\n" + "="*70)
     print("🔬 DERMATONET - SISTEMA DE CLASSIFICAÇÃO DE LESÕES DE PELE")
     print("="*70)
     
-    # Carregar modelo
     model, class_names, metadata = load_model(args.model, args.metadata)
     
-    # Informações do modelo (verbose)
     if args.verbose:
         print("\nInformações do Modelo:")
         print(f"   Acurácia de Validação: {metadata['best_val_acc']:.2f}%")
         print(f"   Acurácia de Teste: {metadata['test_acc']:.2f}%")
         print(f"   Classes: {', '.join(class_names)}")
     
-    # Pré-processar imagem
     print(f"\nProcessando imagem: {args.image}")
     image_tensor, original_image = preprocess_image(args.image)
     print(f"   Tamanho original: {original_image.size}")
     print(f"   Redimensionada para: {IMG_SIZE}x{IMG_SIZE}")
     
-    # Predição
     print("\nAnalisando...")
     predictions = predict(model, image_tensor, class_names, top_k=args.top_k)
     
-    # Mostrar resultados
     print_results(predictions, verbose=args.verbose)
 
 if __name__ == "__main__":
