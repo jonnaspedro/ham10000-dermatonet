@@ -25,3 +25,19 @@ Desenvolver um modelo de deep learning capaz de classificar diferentes tipos de 
 - Experimentação inicial em andamento  
 - Artigo em escrita  
 - Aplicação em desenvolvimento
+
+## Como rodar
+- **OBS:** Mais jeitos de rodar os códigos em [run](run.py), e antes de instalar o dataset, leia [dataset_install](src/dataset_install.py)
+```bash
+# Instale as dependências
+pip install -r requirements.txt
+
+# Para instalar o dataset
+python run.py install
+
+# Para treinar
+python run.py train
+
+# Para iniciar o streamlit (CLI)
+streamlit run ./src/streamlit_app.py
+```
